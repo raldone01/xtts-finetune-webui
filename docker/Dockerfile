@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:1.4
-FROM python:3.10
+FROM python:3.12
 
 # Install system dependencies
 RUN --mount=type=cache,target=/var/cache/apt \
