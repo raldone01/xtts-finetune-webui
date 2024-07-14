@@ -4,7 +4,7 @@ FROM python:3.10
 # Install system dependencies
 RUN --mount=type=cache,target=/var/cache/apt \
   apt-get update && \
-  apt-get install -y --no-install-recommends net-tools nano
+  apt-get install -y --no-install-recommends net-tools nano rustc
 
 ENV PYTHONDONTWRITEBYTECODE=1
 
