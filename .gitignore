@@ -164,3 +164,8 @@ finetune_models
 /test_model
 /datasets
 /tmp
+
+# docker
+docker/hf/
+docker/input/
+docker/output/

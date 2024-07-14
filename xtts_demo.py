@@ -62,7 +62,7 @@ def run_tts(lang, tts_text, speaker_audio_file, temperature, length_penalty,repe
         return "You need to run the previous step to load the model !!", None, None
 
     gpt_cond_latent, speaker_embedding = XTTS_MODEL.get_conditioning_latents(audio_path=speaker_audio_file, gpt_cond_len=XTTS_MODEL.config.gpt_cond_len, max_ref_length=XTTS_MODEL.config.max_ref_len, sound_norm_refs=XTTS_MODEL.config.sound_norm_refs)
-    
+
     if use_config:
         out = XTTS_MODEL.inference(
             text=tts_text,
@@ -99,15 +99,15 @@ def run_tts(lang, tts_text, speaker_audio_file, temperature, length_penalty,repe
 
 
 def load_params_tts(out_path,version):
-    
+
     out_path = Path(out_path)
 
-    # base_model_path = Path.cwd() / "models" / version 
+    # base_model_path = Path.cwd() / "models" / version
 
     # if not base_model_path.exists():
     #     return "Base model not found !","","",""
 
-    ready_model_path = out_path / "ready" 
+    ready_model_path = out_path / "ready"
 
     vocab_path =  ready_model_path / "vocab.json"
     config_path = ready_model_path / "config.json"
@@ -119,10 +119,10 @@ def load_params_tts(out_path,version):
     if not model_path.exists():
         model_path = ready_model_path / "unoptimize_model.pth"
         if not model_path.exists():
-          return "Params for TTS not found", "", "", ""         
+          return "Params for TTS not found", "", "", ""
 
     return "Params for TTS loaded", model_path, config_path, vocab_path,speaker_path, reference_path
-     
+
 
 if __name__ == "__main__":
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         description="""XTTS fine-tuning demo\n\n"""
         """
         Example runs:
-        python3 TTS/demos/xtts_ft_demo/xtts_demo.py --port 
+        python3 TTS/demos/xtts_ft_demo/xtts_demo.py --port
         """,
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -139,6 +139,12 @@ if __name__ == "__main__":
         type=int,
         help="Port to run the gradio demo. Default: 5003",
         default=5003,
+    )
+    parser.add_argument(
+        "--server_name",
+        type=str,
+        help="Server name. Default: 'localhost'",
+        default="localhost",
     )
     parser.add_argument(
         "--out_path",
@@ -189,7 +195,7 @@ if __name__ == "__main__":
                 file_count="multiple",
                 label="Select here the audio files that you want to use for XTTS trainining (Supported formats: wav, mp3, and flac)",
             )
-            
+
             audio_folder_path = gr.Textbox(
                 label="Path to the folder with audio files (optional):",
                 value="",
@@ -235,49 +241,49 @@ if __name__ == "__main__":
             # demo.load(read_logs, None, logs, every=1)
 
             prompt_compute_btn = gr.Button(value="Step 1 - Create dataset")
-        
+
             def preprocess_dataset(audio_path, audio_folder_path, language, whisper_model, out_path, train_csv, eval_csv, progress=gr.Progress(track_tqdm=True)):
                 clear_gpu_cache()
-            
+
                 train_csv = ""
                 eval_csv = ""
-            
+
                 out_path = os.path.join(out_path, "dataset")
                 os.makedirs(out_path, exist_ok=True)
-            
+
                 if audio_folder_path:
                     audio_files = list(list_audios(audio_folder_path))
                 else:
                     audio_files = audio_path
-            
+
                 if not audio_files:
                     return "No audio files found! Please provide files via Gradio or specify a folder path.", "", ""
                 else:
                     try:
                         # Loading Whisper
-                        device = "cuda" if torch.cuda.is_available() else "cpu" 
-                        
-                        # Detect compute type 
+                        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+                        # Detect compute type
                         if torch.cuda.is_available():
                             compute_type = "float16"
                         else:
                             compute_type = "float32"
-                        
+
                         asr_model = WhisperModel(whisper_model, device=device, compute_type=compute_type)
                         train_meta, eval_meta, audio_total_size = format_audio_list(audio_files, asr_model=asr_model, target_language=language, out_path=out_path, gradio_progress=progress)
                     except:
                         traceback.print_exc()
                         error = traceback.format_exc()
                         return f"The data processing was interrupted due an error !! Please check the console to verify the full error message! \n Error summary: {error}", "", ""
-            
+
                 # clear_gpu_cache()
-            
+
                 # if audio total len is less than 2 minutes raise an error
                 if audio_total_size < 120:
                     message = "The sum of the duration of the audios that you provided should be at least 2 minutes!"
                     print(message)
                     return message, "", ""
-            
+
                 print("Dataset Processed!")
                 return "Dataset Processed!", train_meta, eval_meta
 
@@ -342,7 +348,7 @@ if __name__ == "__main__":
                     "dataset",
                     "all"
                 ])
-            
+
             progress_train = gr.Label(
                 label="Progress:"
             )
@@ -350,7 +356,7 @@ if __name__ == "__main__":
             # demo.load(read_logs, None, logs_tts_train, every=1)
             train_btn = gr.Button(value="Step 2 - Run the training")
             optimize_model_btn = gr.Button(value="Step 2.5 - Optimize the model")
-            
+
             def train_model(custom_model,version,language, train_csv, eval_csv, num_epochs, batch_size, grad_acumm, output_path, max_audio_length):
                 clear_gpu_cache()
 
@@ -359,8 +365,8 @@ if __name__ == "__main__":
                 # # Remove train dir
                 if run_dir.exists():
                     os.remove(run_dir)
-                
-                # Check if the dataset language matches the language you specified 
+
+                # Check if the dataset language matches the language you specified
                 lang_file_path = Path(output_path) / "dataset" / "lang.txt"
 
                 # Check if lang.txt already exists and contains a different language
@@ -371,7 +377,7 @@ if __name__ == "__main__":
                         if current_language != language:
                             print("The language that was prepared for the dataset does not match the specified language. Change the language to the one specified in the dataset")
                             language = current_language
-                        
+
                 if not train_csv or not eval_csv:
                     return "You need to run the data processing step or manually set `Train CSV` and `Eval CSV` fields !", "", "", "", ""
                 try:
@@ -386,7 +392,7 @@ if __name__ == "__main__":
                 # copy original files to avoid parameters changes issues
                 # os.system(f"cp {config_path} {exp_path}")
                 # os.system(f"cp {vocab_file} {exp_path}")
-                
+
                 ready_dir = Path(output_path) / "ready"
 
                 ft_xtts_checkpoint = os.path.join(exp_path, "best_model.pth")
@@ -409,30 +415,30 @@ if __name__ == "__main__":
             def optimize_model(out_path, clear_train_data):
                 # print(out_path)
                 out_path = Path(out_path)  # Ensure that out_path is a Path object.
-            
+
                 ready_dir = out_path / "ready"
                 run_dir = out_path / "run"
                 dataset_dir = out_path / "dataset"
-            
+
                 # Clear specified training data directories.
                 if clear_train_data in {"run", "all"} and run_dir.exists():
                     try:
                         shutil.rmtree(run_dir)
                     except PermissionError as e:
                         print(f"An error occurred while deleting {run_dir}: {e}")
-            
+
                 if clear_train_data in {"dataset", "all"} and dataset_dir.exists():
                     try:
                         shutil.rmtree(dataset_dir)
                     except PermissionError as e:
                         print(f"An error occurred while deleting {dataset_dir}: {e}")
-            
+
                 # Get full path to model
                 model_path = ready_dir / "unoptimize_model.pth"
 
                 if not model_path.is_file():
                     return "Unoptimized model not found in ready folder", ""
-            
+
                 # Load the checkpoint and remove unnecessary parts.
                 checkpoint = torch.load(model_path, map_location=torch.device("cpu"))
                 del checkpoint["optimizer"]
@@ -447,17 +453,17 @@ if __name__ == "__main__":
                   # Save the optimized model.
                 optimized_model_file_name="model.pth"
                 optimized_model=ready_dir/optimized_model_file_name
-            
+
                 torch.save(checkpoint, optimized_model)
                 ft_xtts_checkpoint=str(optimized_model)
 
                 clear_gpu_cache()
-        
+
                 return f"Model optimized and saved at {ft_xtts_checkpoint}!", ft_xtts_checkpoint
 
             def load_params(out_path):
                 path_output = Path(out_path)
-                
+
                 dataset_path = path_output / "dataset"
 
                 if not dataset_path.exists():
@@ -646,7 +652,7 @@ if __name__ == "__main__":
                 ],
                 outputs=[progress_train,xtts_checkpoint],
             )
-            
+
             load_btn.click(
                 fn=load_model,
                 inputs=[
@@ -689,5 +695,5 @@ if __name__ == "__main__":
         debug=False,
         server_port=args.port,
         # inweb=True,
-        # server_name="localhost"
+        server_name=args.server_name,
     )
