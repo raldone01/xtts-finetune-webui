@@ -1,3 +1,4 @@
 docker/hf/
 docker/input/
 docker/output/
+.git/
