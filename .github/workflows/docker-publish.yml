@@ -50,6 +50,13 @@ jobs:
             suffix: -rocm
 
     steps:
+      # Frees 10GB https://stackoverflow.com/a/75539500
+      # If more is needed: https://github.com/actions/runner-images/issues/2840#issuecomment-1540506686
+      - name: Remove unnecessary files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
       - name: Checkout
         uses: actions/checkout@v4
 
